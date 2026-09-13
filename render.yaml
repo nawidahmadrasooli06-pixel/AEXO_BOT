@@ -1,1 +1,21 @@
+services:
+  - type: web
+    name: aexo-messenger
+    runtime: python
+    plan: free
 
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bot.py
+
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+
+      - key: ADMIN_USERNAME
+        value: OWNER_AEXO
+
+      - key: ADMIN_CHAT_ID
+        value: "8507394356"
+
+      - key: PYTHON_VERSION
+        value: 3.12.10
