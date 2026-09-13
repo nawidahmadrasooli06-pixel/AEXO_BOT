@@ -1,7 +1,7 @@
 import os
 import re
-import logging
 import threading
+import logging
 
 from fastapi import FastAPI
 import uvicorn
@@ -10,7 +10,6 @@ from telegram import (
     Update,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    ReplyKeyboardMarkup,
 )
 from telegram.ext import (
     Application,
@@ -23,19 +22,19 @@ from telegram.ext import (
 
 
 # =========================================================
-# CONFIG
+# AEXO MESSENGER
 # =========================================================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
 ADMIN_USERNAME = os.getenv(
     "ADMIN_USERNAME",
-    "OWNER_AEXO",
+    "OWNER_AEXO"
 ).strip().lstrip("@").lower()
 
 ADMIN_CHAT_ID_RAW = os.getenv(
     "ADMIN_CHAT_ID",
-    "8507394356",
+    "8507394356"
 ).strip()
 
 try:
@@ -43,29 +42,17 @@ try:
 except ValueError:
     ADMIN_CHAT_ID = None
 
-
-BOT_NAME = "AEXO Messenger"
-OWNER_NAME = "✑︎𓅓 𝐎𝐖𝐍𝐄𝐑 𝐀𝐄𝐗𝐎 𓆃™"
-OWNER_USERNAME = "@OWNER_AEXO"
-
 PORT = int(os.getenv("PORT", "10000"))
 
-CHANNELS = {
-    "رضایت مشتری AEXO": "https://t.me/AEXORAZIAT",
-    "پشتیبانی AEXO": "https://t.me/AEXO_SUPPORT",
-}
+BOT_NAME = "🖋️ AEXO Messenger"
+OWNER_USERNAME = "@OWNER_AEXO"
+OWNER_NAME = "✑︎𓅓 𝐎𝐖𝐍𝐄𝐑 𝐀𝐄𝐗𝐎 𓆃™"
 
-FREE_BOTS = {
-    "AexoApi1Bot": "https://t.me/AexoApi1Bot",
-    "AexoPlayerBot": "https://t.me/AexoPlayerBot",
-}
+CHANNEL_SATISFACTION = "https://t.me/AEXORAZIAT"
+CHANNEL_SUPPORT = "https://t.me/AEXO_SUPPORT"
 
-
-if not BOT_TOKEN:
-    raise RuntimeError(
-        "BOT_TOKEN is missing. "
-        "Please add BOT_TOKEN in Render Environment Variables."
-    )
+FREE_BOT_API = "https://t.me/AexoApi1Bot"
+FREE_BOT_PLAYER = "https://t.me/AexoPlayerBot"
 
 
 # =========================================================
@@ -81,7 +68,7 @@ logger = logging.getLogger(__name__)
 
 
 # =========================================================
-# FASTAPI / RENDER
+# RENDER WEB SERVER
 # =========================================================
 
 web_app = FastAPI()
@@ -91,7 +78,7 @@ web_app = FastAPI()
 async def home():
     return {
         "status": "online",
-        "bot": BOT_NAME,
+        "service": "AEXO Messenger",
     }
 
 
@@ -99,7 +86,7 @@ async def home():
 async def health():
     return {
         "status": "ok",
-        "bot": BOT_NAME,
+        "service": "AEXO Messenger",
     }
 
 
@@ -113,7 +100,7 @@ def run_web_server():
 
 
 # =========================================================
-# ADMIN CHECK
+# ADMIN
 # =========================================================
 
 def is_admin(user) -> bool:
@@ -123,39 +110,17 @@ def is_admin(user) -> bool:
     if ADMIN_CHAT_ID is not None:
         return user.id == ADMIN_CHAT_ID
 
-    username = (user.username or "").strip().lower()
+    username = (user.username or "").lower().lstrip("@")
 
     return username == ADMIN_USERNAME
 
 
 # =========================================================
-# MENUS
+# MAIN INLINE MENU
+# فقط یک منو؛ پایین صفحه Reply Keyboard نداریم
 # =========================================================
 
 def main_menu():
-    keyboard = [
-        [
-            "💎 خدمات AEXO",
-            "🤖 ربات‌های AEXO",
-        ],
-        [
-            "📢 کانال‌های AEXO",
-            "👤 درباره AEXO",
-        ],
-        [
-            "💌 ارسال پیام",
-            "❓ راهنما",
-        ],
-    ]
-
-    return ReplyKeyboardMarkup(
-        keyboard,
-        resize_keyboard=True,
-        is_persistent=True,
-    )
-
-
-def start_inline_menu():
     return InlineKeyboardMarkup(
         [
             [
@@ -164,13 +129,13 @@ def start_inline_menu():
                     callback_data="services",
                 ),
                 InlineKeyboardButton(
-                    "🤖 ربات‌ها",
+                    "🤖 ربات‌های AEXO",
                     callback_data="bots",
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    "📢 کانال‌ها",
+                    "📢 کانال‌های AEXO",
                     callback_data="channels",
                 ),
                 InlineKeyboardButton(
@@ -189,7 +154,7 @@ def start_inline_menu():
 
 
 # =========================================================
-# START TEXT
+# START
 # =========================================================
 
 START_TEXT = (
@@ -201,17 +166,13 @@ START_TEXT = (
     "🤖 ربات‌های اختصاصی و حرفه‌ای\n\n"
     "🆓 ربات‌های رایگان برای گروه و کانال شما:\n"
     "@AexoApi1Bot\n"
-    "@AexoPlayerBot\n"
+    "@AexoPlayerBot\n\n"
     "💠 ربات‌های قدرتمند اشتراکی نیز موجود است.\n"
-    "📩 برای ثبت سفارش یا دریافت اطلاعات، همین‌جا پیام بدید.\n"
+    "📩 برای ثبت سفارش یا دریافت اطلاعات، همین‌جا پیام بدید.\n\n"
     "👤 مالک: @OWNER_AEXO\n"
     "✑︎𓅓 𝐎𝐖𝐍𝐄𝐑 𝐀𝐄𝐗𝐎 𓆃™"
 )
 
-
-# =========================================================
-# START
-# =========================================================
 
 async def start(
     update: Update,
@@ -222,55 +183,28 @@ async def start(
     if not update.effective_user or not update.message:
         return
 
-    user = update.effective_user
+    context.user_data["waiting_message"] = False
 
-    if is_admin(user):
+    if is_admin(update.effective_user):
         ADMIN_CHAT_ID = update.effective_chat.id
 
         logger.info(
-            "AEXO owner detected. Chat ID: %s",
+            "Owner detected. Chat ID: %s",
             ADMIN_CHAT_ID,
         )
 
-    context.user_data["waiting_message"] = False
-
     await update.message.reply_text(
         START_TEXT,
-        reply_markup=start_inline_menu(),
-    )
-
-    await update.message.reply_text(
-        "از کانال‌های AEXO دیدن کنید:",
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton(
-                        "📢 رضایت مشتری AEXO",
-                        url=CHANNELS["رضایت مشتری AEXO"],
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "💬 گروه پشتیبانی",
-                        url=CHANNELS["پشتیبانی AEXO"],
-                    )
-                ],
-            ]
-        ),
-    )
-
-    await update.message.reply_text(
-        "منوی AEXO:",
         reply_markup=main_menu(),
     )
 
 
 # =========================================================
-# ABOUT SERVICES
+# SERVICES
 # =========================================================
 
 async def services(
-    update: Update,
+    query,
     context: ContextTypes.DEFAULT_TYPE,
 ):
     text = (
@@ -283,12 +217,28 @@ async def services(
         "⭐ استارز و پریمیوم\n"
         "🤖 ربات‌های اختصاصی و حرفه‌ای\n\n"
         "💠 ربات‌های قدرتمند اشتراکی نیز موجود است.\n\n"
-        "📩 برای ثبت سفارش، از «💌 ارسال پیام» استفاده کنید."
+        "📩 برای ثبت سفارش یا دریافت اطلاعات، "
+        "پیام ارسال کنید."
     )
 
-    await update.message.reply_text(
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "💌 ارسال پیام",
+                callback_data="message",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "↩️ بازگشت",
+                callback_data="home",
+            )
+        ],
+    ]
+
+    await query.edit_message_text(
         text,
-        reply_markup=main_menu(),
+        reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
 
@@ -297,30 +247,49 @@ async def services(
 # =========================================================
 
 async def bots(
-    update: Update,
+    query,
     context: ContextTypes.DEFAULT_TYPE,
 ):
+    text = (
+        "🤖 ربات‌های AEXO\n\n"
+        "🆓 رایگان — همین حالا امتحان کنید!\n\n"
+        "🛡️ AexoApi1Bot\n"
+        "ربات مدیریت و محافظ\n\n"
+        "🎵 AexoPlayerBot\n"
+        "ربات موزیک‌پلیر\n\n"
+        "💠 ربات‌های قدرتمند اشتراکی نیز موجود است.\n"
+        "برای دیدن ربات‌های رایگان، روی گزینه موردنظر بزنید."
+    )
+
     keyboard = [
         [
             InlineKeyboardButton(
-                "🛡️ AexoApi1Bot",
-                url=FREE_BOTS["AexoApi1Bot"],
+                "🆓 🛡️ ربات محافظ رایگان",
+                url=FREE_BOT_API,
             )
         ],
         [
             InlineKeyboardButton(
-                "🎵 AexoPlayerBot",
-                url=FREE_BOTS["AexoPlayerBot"],
+                "🆓 🎵 ربات موزیک رایگان",
+                url=FREE_BOT_PLAYER,
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "💎 ربات‌های اشتراکی",
+                callback_data="services",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "↩️ بازگشت",
+                callback_data="home",
             )
         ],
     ]
 
-    await update.message.reply_text(
-        "🤖 ربات‌های AEXO\n\n"
-        "🆓 ربات‌های رایگان برای گروه و کانال:\n\n"
-        "🛡️ ربات مدیریت و محافظ\n"
-        "🎵 ربات موزیک‌پلیر\n\n"
-        "💠 ربات‌های حرفه‌ای اشتراکی نیز موجود است.",
+    await query.edit_message_text(
+        text,
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
@@ -330,82 +299,119 @@ async def bots(
 # =========================================================
 
 async def channels(
-    update: Update,
+    query,
     context: ContextTypes.DEFAULT_TYPE,
 ):
+    text = (
+        "📢 کانال‌ها و پشتیبانی AEXO\n\n"
+        "برای مشاهده رضایت مشتریان یا دریافت "
+        "پشتیبانی، گزینه موردنظر را انتخاب کنید."
+    )
+
     keyboard = [
         [
             InlineKeyboardButton(
                 "📢 رضایت مشتری AEXO",
-                url=CHANNELS["رضایت مشتری AEXO"],
+                url=CHANNEL_SATISFACTION,
             )
         ],
         [
             InlineKeyboardButton(
                 "💬 گروه پشتیبانی AEXO",
-                url=CHANNELS["پشتیبانی AEXO"],
+                url=CHANNEL_SUPPORT,
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "↩️ بازگشت",
+                callback_data="home",
             )
         ],
     ]
 
-    await update.message.reply_text(
-        "📢 کانال‌ها و پشتیبانی AEXO\n\n"
-        "برای مشاهده رضایت مشتریان یا دریافت پشتیبانی، "
-        "یکی از گزینه‌های زیر را انتخاب کنید.",
+    await query.edit_message_text(
+        text,
         reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
 
 # =========================================================
-# ABOUT AEXO
+# ABOUT
 # =========================================================
 
 async def about(
-    update: Update,
+    query,
     context: ContextTypes.DEFAULT_TYPE,
 ):
     text = (
         "👤 درباره AEXO\n\n"
         f"{OWNER_NAME}\n"
         f"Username: {OWNER_USERNAME}\n\n"
-        "AEXO یک مجموعه فعال در زمینه ربات‌های تلگرامی، "
-        "مدیریت گروه و کانال و سرویس‌های دیجیتال است.\n\n"
+        "AEXO در زمینه ربات‌های تلگرامی، "
+        "مدیریت گروه و کانال، موزیک‌پلیر و "
+        "راهکارهای اختصاصی فعالیت می‌کند.\n\n"
         "🛡️ مدیریت و محافظ\n"
         "🎵 موزیک‌پلیر\n"
         "🤖 ربات‌های اختصاصی\n"
-        "💎 سرویس‌های حرفه‌ای\n\n"
+        "💎 خدمات حرفه‌ای\n\n"
         "✦ AEXO — Professional Telegram Solutions\n\n"
         "طراحی بات: @cactuc580"
     )
 
-    await update.message.reply_text(
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "💌 ارسال پیام",
+                callback_data="message",
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                "↩️ بازگشت",
+                callback_data="home",
+            )
+        ],
+    ]
+
+    await query.edit_message_text(
         text,
-        reply_markup=main_menu(),
+        reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
 
 # =========================================================
-# HELP
+# SEND MESSAGE
 # =========================================================
 
-async def help_menu(
-    update: Update,
+async def start_sending(
+    query,
     context: ContextTypes.DEFAULT_TYPE,
 ):
+    context.user_data["waiting_message"] = True
+
     text = (
-        "❓ راهنمای AEXO\n\n"
-        "💎 خدمات AEXO — مشاهده خدمات\n"
-        "🤖 ربات‌های AEXO — مشاهده ربات‌ها\n"
-        "📢 کانال‌های AEXO — کانال و پشتیبانی\n"
-        "👤 درباره AEXO — معرفی مجموعه\n"
-        "💌 ارسال پیام — ارتباط مستقیم با مالک\n\n"
-        "برای ثبت سفارش یا پرسش، "
-        "از «💌 ارسال پیام» استفاده کنید."
+        "💌 ارسال پیام به OWNER AEXO\n\n"
+        "پیامت رو همین‌جا بفرست.\n\n"
+        "📝 متن\n"
+        "🖼️ عکس\n"
+        "🎥 ویدیو\n"
+        "📁 فایل\n"
+        "🎤 ویس\n\n"
+        "پیام مستقیماً برای مالک AEXO ارسال میشه."
     )
 
-    await update.message.reply_text(
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                "↩️ لغو",
+                callback_data="home",
+            )
+        ]
+    ]
+
+    await query.edit_message_text(
         text,
-        reply_markup=main_menu(),
+        reply_markup=InlineKeyboardMarkup(keyboard),
     )
 
 
@@ -424,36 +430,14 @@ async def my_id(
         return
 
     await update.message.reply_text(
-        "🆔 اطلاعات AEXO\n\n"
+        "🆔 اطلاعات مالک AEXO\n\n"
         f"User ID:\n{update.effective_user.id}\n\n"
         f"Chat ID:\n{update.effective_chat.id}"
     )
 
 
 # =========================================================
-# START SENDING
-# =========================================================
-
-async def start_sending(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-):
-    if not update.message:
-        return
-
-    context.user_data["waiting_message"] = True
-
-    await update.message.reply_text(
-        "💌 پیام خودت رو برای OWNER AEXO بفرست.\n\n"
-        "متن، عکس، ویدیو، فایل یا ویس هم می‌تونی ارسال کنی.\n\n"
-        "پیام مستقیماً برای مالک AEXO ارسال میشه.\n"
-        "برای لغو، /start رو بزن.",
-        reply_markup=main_menu(),
-    )
-
-
-# =========================================================
-# SEND USER MESSAGE TO ADMIN
+# SEND USER MESSAGE TO OWNER
 # =========================================================
 
 async def send_user_message_to_admin(
@@ -467,22 +451,22 @@ async def send_user_message_to_admin(
 
     if ADMIN_CHAT_ID is None:
         await update.message.reply_text(
-            "⚠️ مالک ربات هنوز فعال‌سازی را کامل نکرده است."
+            "⚠️ ارتباط با مالک هنوز فعال نشده است."
         )
         return
 
     user = update.effective_user
 
-    username_text = (
+    username = (
         f"@{user.username}"
         if user.username
         else "ندارد"
     )
 
     header = (
-        "📩 پیام جدید AEXO\n\n"
+        "📩 پیام جدید از AEXO Messenger\n\n"
         f"👤 نام: {user.full_name}\n"
-        f"🔹 Username: {username_text}\n"
+        f"🔹 Username: {username}\n"
         f"🆔 User ID: {user.id}\n\n"
         "↩️ برای پاسخ، روی همین پیام Reply بزن."
     )
@@ -500,27 +484,26 @@ async def send_user_message_to_admin(
         context.user_data["waiting_message"] = False
 
         await update.message.reply_text(
-            "✅ پیام شما با موفقیت برای OWNER AEXO ارسال شد.",
-            reply_markup=main_menu(),
+            "✅ پیام شما با موفقیت ارسال شد.\n"
+            "OWNER AEXO به‌زودی پاسخ می‌دهد."
         )
 
     except Exception:
         logger.exception(
-            "Could not send user message to admin."
+            "Failed to send user message."
         )
 
         await update.message.reply_text(
             "❌ ارسال پیام انجام نشد.\n"
-            "لطفاً کمی بعد دوباره امتحان کنید.",
-            reply_markup=main_menu(),
+            "لطفاً کمی بعد دوباره تلاش کنید."
         )
 
 
 # =========================================================
-# EXTRACT USER ID FROM ADMIN HEADER
+# FIND USER ID FROM OWNER REPLY
 # =========================================================
 
-def extract_user_id_from_admin_message(message):
+def extract_user_id(message):
     if not message.reply_to_message:
         return None
 
@@ -545,17 +528,14 @@ def extract_user_id_from_admin_message(message):
 
 
 # =========================================================
-# ADMIN REPLY TO USER
+# OWNER REPLY
 # =========================================================
 
 async def send_admin_reply_to_user(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ):
-    if not update.message:
-        return False
-
-    if not update.effective_user:
+    if not update.message or not update.effective_user:
         return False
 
     if not is_admin(update.effective_user):
@@ -564,15 +544,12 @@ async def send_admin_reply_to_user(
     if not update.message.reply_to_message:
         return False
 
-    target_user_id = extract_user_id_from_admin_message(
+    target_user_id = extract_user_id(
         update.message
     )
 
     if not target_user_id:
-        await update.message.reply_text(
-            "⚠️ لطفاً روی پیام اصلی کاربر Reply کنید."
-        )
-        return True
+        return False
 
     try:
         await update.message.copy(
@@ -585,7 +562,7 @@ async def send_admin_reply_to_user(
 
     except Exception:
         logger.exception(
-            "Could not send admin reply."
+            "Failed to send owner reply."
         )
 
         await update.message.reply_text(
@@ -597,7 +574,7 @@ async def send_admin_reply_to_user(
 
 
 # =========================================================
-# CALLBACK BUTTONS
+# CALLBACK ROUTER
 # =========================================================
 
 async def callback_router(
@@ -614,147 +591,49 @@ async def callback_router(
     data = query.data
 
     if data == "home":
-        await query.message.edit_text(
+        context.user_data["waiting_message"] = False
+
+        await query.edit_message_text(
             START_TEXT,
-            reply_markup=start_inline_menu(),
+            reply_markup=main_menu(),
         )
+
         return
 
     if data == "services":
-        await query.message.edit_text(
-            "💎 خدمات AEXO\n\n"
-            "🛡️ مدیریت و محافظ گروه و کانال\n"
-            "🎵 موزیک‌پلیر رایگان و اشتراکی\n"
-            "👥 ممبر و ممبر فعال\n"
-            "👁️ ویو و سین‌زن کانال\n"
-            "❤️ لایک و فالور\n"
-            "⭐ استارز و پریمیوم\n"
-            "🤖 ربات‌های اختصاصی و حرفه‌ای\n\n"
-            "💠 ربات‌های قدرتمند اشتراکی نیز موجود است.\n\n"
-            "📩 برای ثبت سفارش، پیام ارسال کنید.",
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "💌 ارسال پیام",
-                            callback_data="message",
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "↩️ بازگشت",
-                            callback_data="home",
-                        )
-                    ],
-                ]
-            ),
+        await services(
+            query,
+            context,
         )
         return
 
     if data == "bots":
-        await query.message.edit_text(
-            "🤖 ربات‌های AEXO\n\n"
-            "🆓 ربات‌های رایگان:\n\n"
-            "🛡️ AexoApi1Bot\n"
-            "🎵 AexoPlayerBot\n\n"
-            "💠 ربات‌های حرفه‌ای اشتراکی نیز موجود است.",
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "🛡️ AexoApi1Bot",
-                            url=FREE_BOTS["AexoApi1Bot"],
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "🎵 AexoPlayerBot",
-                            url=FREE_BOTS["AexoPlayerBot"],
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "↩️ بازگشت",
-                            callback_data="home",
-                        )
-                    ],
-                ]
-            ),
+        await bots(
+            query,
+            context,
         )
         return
 
     if data == "channels":
-        await query.message.edit_text(
-            "📢 کانال‌ها و پشتیبانی AEXO\n\n"
-            "برای مشاهده رضایت مشتریان یا دریافت "
-            "پشتیبانی، گزینه موردنظر را انتخاب کنید.",
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "📢 رضایت مشتری AEXO",
-                            url=CHANNELS["رضایت مشتری AEXO"],
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "💬 گروه پشتیبانی",
-                            url=CHANNELS["پشتیبانی AEXO"],
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "↩️ بازگشت",
-                            callback_data="home",
-                        )
-                    ],
-                ]
-            ),
+        await channels(
+            query,
+            context,
         )
         return
 
     if data == "about":
-        await query.message.edit_text(
-            "👤 درباره AEXO\n\n"
-            f"{OWNER_NAME}\n"
-            f"Username: {OWNER_USERNAME}\n\n"
-            "AEXO مجموعه‌ای برای ارائه راهکارهای "
-            "حرفه‌ای تلگرامی، مدیریت گروه و کانال و "
-            "ربات‌های اختصاصی است.\n\n"
-            "✦ AEXO — Professional Telegram Solutions\n\n"
-            "طراحی بات: @cactuc580",
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "↩️ بازگشت",
-                            callback_data="home",
-                        )
-                    ]
-                ]
-            ),
+        await about(
+            query,
+            context,
         )
         return
 
     if data == "message":
-        context.user_data["waiting_message"] = True
-
-        await query.message.edit_text(
-            "💌 پیام خودت رو برای OWNER AEXO بفرست.\n\n"
-            "متن، عکس، ویدیو، فایل یا ویس هم می‌تونی ارسال کنی.\n\n"
-            "پیام مستقیماً برای مالک AEXO ارسال میشه.\n"
-            "برای لغو، /start رو بزن.",
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton(
-                            "↩️ لغو",
-                            callback_data="home",
-                        )
-                    ]
-                ]
-            ),
+        await start_sending(
+            query,
+            context,
         )
+        return
 
 
 # =========================================================
@@ -768,7 +647,7 @@ async def message_router(
     if not update.message or not update.effective_user:
         return
 
-    # Admin reply system
+    # Owner reply system
     if is_admin(update.effective_user):
         handled = await send_admin_reply_to_user(
             update,
@@ -778,32 +657,7 @@ async def message_router(
         if handled:
             return
 
-    text = update.message.text or ""
-
-    if text == "💎 خدمات AEXO":
-        await services(update, context)
-        return
-
-    if text == "🤖 ربات‌های AEXO":
-        await bots(update, context)
-        return
-
-    if text == "📢 کانال‌های AEXO":
-        await channels(update, context)
-        return
-
-    if text == "👤 درباره AEXO":
-        await about(update, context)
-        return
-
-    if text == "💌 ارسال پیام":
-        await start_sending(update, context)
-        return
-
-    if text == "❓ راهنما":
-        await help_menu(update, context)
-        return
-
+    # User is sending a message to owner
     if context.user_data.get(
         "waiting_message",
         False,
@@ -815,13 +669,18 @@ async def message_router(
         return
 
     await update.message.reply_text(
-        "از منوی AEXO یکی از گزینه‌ها را انتخاب کنید.",
+        "برای استفاده از AEXO، "
+        "از منوی زیر انتخاب کنید."
+    )
+
+    await update.message.reply_text(
+        "🖋️ AEXO Messenger",
         reply_markup=main_menu(),
     )
 
 
 # =========================================================
-# POST INIT
+# BOT COMMANDS
 # =========================================================
 
 async def post_init(
@@ -829,14 +688,40 @@ async def post_init(
 ):
     await application.bot.set_my_commands(
         [
-            ("start", "شروع ربات"),
-            ("help", "راهنما"),
-            ("myid", "شناسه کاربری"),
+            (
+                "start",
+                "شروع ربات",
+            ),
+            (
+                "help",
+                "راهنما",
+            ),
+            (
+                "myid",
+                "شناسه مالک",
+            ),
         ]
     )
 
     logger.info(
-        "AEXO commands configured successfully."
+        "AEXO commands configured."
+    )
+
+
+async def help_command(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+    if not update.message:
+        return
+
+    await update.message.reply_text(
+        "❓ راهنمای AEXO\n\n"
+        "از منوی زیر می‌توانید خدمات، ربات‌های رایگان، "
+        "کانال‌ها و اطلاعات AEXO را مشاهده کنید.\n\n"
+        "💌 برای ارتباط مستقیم با مالک، "
+        "گزینه «ارسال پیام» را انتخاب کنید.",
+        reply_markup=main_menu(),
     )
 
 
@@ -875,7 +760,7 @@ def main():
     application.add_handler(
         CommandHandler(
             "help",
-            help_menu,
+            help_command,
         )
     )
 
@@ -900,14 +785,17 @@ def main():
     )
 
     logger.info(
-        "%s is starting...",
-        BOT_NAME,
+        "AEXO Messenger is starting..."
     )
 
     application.run_polling(
         drop_pending_updates=False,
     )
 
+
+# =========================================================
+# RUN
+# =========================================================
 
 if __name__ == "__main__":
     main()
