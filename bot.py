@@ -16,9 +16,11 @@ from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
+    CallbackQueryHandler,
     ContextTypes,
     filters,
 )
+
 
 # =========================================================
 # CONFIG
@@ -28,12 +30,12 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 
 ADMIN_USERNAME = os.getenv(
     "ADMIN_USERNAME",
-    "OWNER_AEXO"
+    "OWNER_AEXO",
 ).strip().lstrip("@").lower()
 
 ADMIN_CHAT_ID_RAW = os.getenv(
     "ADMIN_CHAT_ID",
-    "8507394356"
+    "8507394356",
 ).strip()
 
 try:
@@ -41,9 +43,12 @@ try:
 except ValueError:
     ADMIN_CHAT_ID = None
 
+
 BOT_NAME = "AEXO Messenger"
 OWNER_NAME = "✑︎𓅓 𝐎𝐖𝐍𝐄𝐑 𝐀𝐄𝐗𝐎 𓆃™"
 OWNER_USERNAME = "@OWNER_AEXO"
+
+PORT = int(os.getenv("PORT", "10000"))
 
 CHANNELS = {
     "رضایت مشتری AEXO": "https://t.me/AEXORAZIAT",
@@ -51,17 +56,17 @@ CHANNELS = {
 }
 
 FREE_BOTS = {
-    "🛡️ ربات مدیریت": "https://t.me/AexoApi1Bot",
-    "🎵 موزیک‌پلیر": "https://t.me/AexoPlayerBot",
+    "AexoApi1Bot": "https://t.me/AexoApi1Bot",
+    "AexoPlayerBot": "https://t.me/AexoPlayerBot",
 }
 
-PORT = int(os.getenv("PORT", "10000"))
 
 if not BOT_TOKEN:
     raise RuntimeError(
         "BOT_TOKEN is missing. "
         "Please add BOT_TOKEN in Render Environment Variables."
     )
+
 
 # =========================================================
 # LOGGING
@@ -73,6 +78,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
 
 # =========================================================
 # FASTAPI / RENDER
@@ -107,7 +113,7 @@ def run_web_server():
 
 
 # =========================================================
-# ADMIN
+# ADMIN CHECK
 # =========================================================
 
 def is_admin(user) -> bool:
@@ -182,19 +188,6 @@ def start_inline_menu():
     )
 
 
-def back_button():
-    return InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    "↩️ منوی اصلی",
-                    callback_data="home",
-                )
-            ]
-        ]
-    )
-
-
 # =========================================================
 # START TEXT
 # =========================================================
@@ -235,7 +228,7 @@ async def start(
         ADMIN_CHAT_ID = update.effective_chat.id
 
         logger.info(
-            "AEXO owner detected: %s",
+            "AEXO owner detected. Chat ID: %s",
             ADMIN_CHAT_ID,
         )
 
@@ -273,7 +266,7 @@ async def start(
 
 
 # =========================================================
-# SERVICES
+# ABOUT SERVICES
 # =========================================================
 
 async def services(
@@ -311,19 +304,13 @@ async def bots(
         [
             InlineKeyboardButton(
                 "🛡️ AexoApi1Bot",
-                url=FREE_BOTS["🛡️ ربات مدیریت"],
+                url=FREE_BOTS["AexoApi1Bot"],
             )
         ],
         [
             InlineKeyboardButton(
                 "🎵 AexoPlayerBot",
-                url=FREE_BOTS["🎵 موزیک‌پلیر"],
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                "↩️ منوی اصلی",
-                callback_data="home",
+                url=FREE_BOTS["AexoPlayerBot"],
             )
         ],
     ]
@@ -359,12 +346,6 @@ async def channels(
                 url=CHANNELS["پشتیبانی AEXO"],
             )
         ],
-        [
-            InlineKeyboardButton(
-                "↩️ منوی اصلی",
-                callback_data="home",
-            )
-        ],
     ]
 
     await update.message.reply_text(
@@ -376,7 +357,7 @@ async def channels(
 
 
 # =========================================================
-# ABOUT
+# ABOUT AEXO
 # =========================================================
 
 async def about(
@@ -429,13 +410,37 @@ async def help_menu(
 
 
 # =========================================================
-# MESSAGE MODE
+# MY ID
+# =========================================================
+
+async def my_id(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+):
+    if not update.effective_user or not update.message:
+        return
+
+    if not is_admin(update.effective_user):
+        return
+
+    await update.message.reply_text(
+        "🆔 اطلاعات AEXO\n\n"
+        f"User ID:\n{update.effective_user.id}\n\n"
+        f"Chat ID:\n{update.effective_chat.id}"
+    )
+
+
+# =========================================================
+# START SENDING
 # =========================================================
 
 async def start_sending(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
 ):
+    if not update.message:
+        return
+
     context.user_data["waiting_message"] = True
 
     await update.message.reply_text(
@@ -448,7 +453,7 @@ async def start_sending(
 
 
 # =========================================================
-# SEND USER MESSAGE
+# SEND USER MESSAGE TO ADMIN
 # =========================================================
 
 async def send_user_message_to_admin(
@@ -501,7 +506,7 @@ async def send_user_message_to_admin(
 
     except Exception:
         logger.exception(
-            "Could not send user message."
+            "Could not send user message to admin."
         )
 
         await update.message.reply_text(
@@ -512,7 +517,7 @@ async def send_user_message_to_admin(
 
 
 # =========================================================
-# EXTRACT USER ID
+# EXTRACT USER ID FROM ADMIN HEADER
 # =========================================================
 
 def extract_user_id_from_admin_message(message):
@@ -540,7 +545,7 @@ def extract_user_id_from_admin_message(message):
 
 
 # =========================================================
-# ADMIN REPLY
+# ADMIN REPLY TO USER
 # =========================================================
 
 async def send_admin_reply_to_user(
@@ -592,7 +597,7 @@ async def send_admin_reply_to_user(
 
 
 # =========================================================
-# CALLBACKS
+# CALLBACK BUTTONS
 # =========================================================
 
 async def callback_router(
@@ -658,13 +663,13 @@ async def callback_router(
                     [
                         InlineKeyboardButton(
                             "🛡️ AexoApi1Bot",
-                            url=FREE_BOTS["🛡️ ربات مدیریت"],
+                            url=FREE_BOTS["AexoApi1Bot"],
                         )
                     ],
                     [
                         InlineKeyboardButton(
                             "🎵 AexoPlayerBot",
-                            url=FREE_BOTS["🎵 موزیک‌پلیر"],
+                            url=FREE_BOTS["AexoPlayerBot"],
                         )
                     ],
                     [
@@ -763,6 +768,7 @@ async def message_router(
     if not update.message or not update.effective_user:
         return
 
+    # Admin reply system
     if is_admin(update.effective_user):
         handled = await send_admin_reply_to_user(
             update,
@@ -830,7 +836,7 @@ async def post_init(
     )
 
     logger.info(
-        "AEXO commands configured."
+        "AEXO commands configured successfully."
     )
 
 
@@ -881,19 +887,15 @@ def main():
     )
 
     application.add_handler(
-        MessageHandler(
-            filters.ALL & ~filters.COMMAND,
-            message_router,
+        CallbackQueryHandler(
+            callback_router
         )
     )
 
     application.add_handler(
-        # Inline button handler
-        __import__(
-            "telegram.ext",
-            fromlist=["CallbackQueryHandler"],
-        ).CallbackQueryHandler(
-            callback_router
+        MessageHandler(
+            filters.ALL & ~filters.COMMAND,
+            message_router,
         )
     )
 
